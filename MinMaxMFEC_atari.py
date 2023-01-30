@@ -27,13 +27,6 @@ class MFECAgent():
 
         return action
 
-    def estimate_values(self, batch_state, batch_action): 
-        values = []
-        for s, a in zip(batch_state, batch_action):
-            projected_state = dot(s.flatten(), self.rp_matrix)
-            values.append(self.qec.estimate(projected_state, a))
-        return values
-
     def update(self, single_trajectory):
         value = 0.0
         for experience in reversed(single_trajectory):
@@ -62,7 +55,8 @@ class ActionBuffer():
         self._tree = None
         self.capacity = capacity
         self.states = []
-        self.values = []
+        self.max_values = []
+        self.min_values = []
         self.times = []
         self.config = config
 
@@ -80,17 +74,19 @@ class ActionBuffer():
     def add(self, state, value, time):
         if len(self) < self.capacity:
             self.states.append(state)
-            self.values.append(value)
+            self.max_values.append(value)
+            self.min_values.append(value)
             self.times.append(time)
         else:
             min_time_idx = int(np.argmin(self.times))
             if time > self.times[min_time_idx]:
-                self.replace(state, value, time, min_time_idx)
+                self.replace(state, value, value, time, min_time_idx)
         self._tree = KDTree(np.array(self.states))
 
-    def replace(self, state, value, time, index):
+    def replace(self, state, max_value, min_value, time, index):
         self.states[index] = state
-        self.values[index] = value
+        self.max_values[index] = max_value
+        self.min_values[index] = min_value
         self.times[index] = time
 
     def __len__(self):
@@ -108,27 +104,33 @@ class QEC(): #q values for episodic controller;
         state_index = buffer.find_states(state)
 
         if state_index:
-            return buffer.values[state_index]
+            max_v = buffer.max_values[state_index]
+            min_v = buffer.min_values[state_index]
+            v = np.mean((max_v, min_v))
+            return v
 
         if len(buffer) <= self.k:
             # if there are not enough neighbors under the given action, this action will be taken. 
             return float('inf')
 
-        value = 0.0
+        max_value = 0.0
+        min_value = 100
         if self.k == 0:
-            return value
+            return np.mean((max_value, min_value))
         neighbors = buffer.find_neighbors(state, self.k)
         for neighbor in neighbors:
-            value += buffer.values[neighbor]
-        return value / self.k
+            max_value += buffer.max_values[neighbor]
+            min_value += buffer.min_values[neighbor]
+        return (max_value + min_value) / (self.k * 2)
 
     def update(self, state, action, value, time):
         buffer = self.buffers[action]
         #print('action: {}'.format(action))
         state_index = buffer.find_states(state)
         if state_index is not None:
-            max_value = max(buffer.values[state_index], value)
+            max_value = max(buffer.max_values[state_index], value)
+            min_value = min(buffer.min_values[state_index], value)
             max_time = max(buffer.times[state_index], time)
-            buffer.replace(state, max_value, max_time, state_index)
+            buffer.replace(state, max_value, min_value, max_time, state_index)
         else:
             buffer.add(state, value, time)

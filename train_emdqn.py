@@ -10,23 +10,24 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from Env import FourRoomsEnv, ObsEnv, ImgEnv, GoalEnv, FlattenObs
-from RB import TwoMBuffer
-from TwoM import TwoMemoryAgent
+from MFEC_atari import MFECAgent
+from EMDQN import EMDQNAgent
+from RB import ReplayBuffer
 
+from utils import cal_eps
 from minigrid.wrappers import ReseedWrapper, FullyObsWrapper, RGBImgObsWrapper, ImgObsWrapper
 
 import psutil
 
-def evaluate(TwoM, eval_env):
+def evaluate(emdqn, eval_env):
     #canvas_agents = np.zeros((20, 20)) # -1 for EC, 1 for RL, 0 means the same(good/bad)
     returns = []
-    agent, agent_str = TwoM.choose_agent_eval()
     for i in range(10):
         eps_returns = 0
         s = eval_env.reset()
         done = False
         while not done:
-            action = agent.select_action(s)
+            action = emdqn.select_action(s)
             if isinstance(action, torch.Tensor):
                 action = action.item()
             n_s, r, done, info = eval_env.step(action)
@@ -37,7 +38,7 @@ def evaluate(TwoM, eval_env):
 
     return np.mean(returns)
             
-def train(TwoM, env, eval_env, config, wandb_session):
+def train(emdqn, rb, env, eval_env, config, wandb_session):
     #wandb_session.watch(rl.Q_net, log='all')
     i_steps = 0
     i_episode = 0
@@ -46,12 +47,14 @@ def train(TwoM, env, eval_env, config, wandb_session):
     while i_steps < config.total_steps:
         single_trajectory = []
         s = env.reset()
-        TwoM.choose_agent()
-        agent_str = TwoM.get_current_agent_str()
         eps_returns = 0
         done = False
         while not done:
-            action = TwoM.select_action(s)
+            eps = cal_eps(config.eps_start, config.eps_end, config.eps_decay_steps, i_steps)
+            if np.random.uniform() < eps:
+                action = np.random.choice(range(emdqn.n_actions))
+            else:
+                action = emdqn.select_action(s)
             if isinstance(action, torch.Tensor):
                 action = action.item()
             i_steps += 1
@@ -69,25 +72,19 @@ def train(TwoM, env, eval_env, config, wandb_session):
             #print(experience)
             single_trajectory.append(experience)
             s = n_s
-            if TwoM.rb_ready():
+            if rb.cntr > config.batch_size:
                 if i_steps % config.RL_train_freq == 0:
-                    batch_data = TwoM.update_rl()
-                    batch_state = batch_data.state
-                    #for train_state in batch_state:
-                    #    train_on_states[train_state] += 1
-        TwoM.update_ec(single_trajectory)
-        TwoM.collect_data(single_trajectory)
-        TwoM.update_score(eps_returns)
+                    batch_data = rb.sample(config.batch_size)
+                    emdqn.update(batch_data)
+        emdqn.em.update(single_trajectory)
+        rb.add(single_trajectory)
         i_episode += 1
         if i_episode % config.eval_freq == 0:
-            eval_return = evaluate(TwoM, eval_env)
-            rl_score, ec_score = TwoM.get_score()
-            epsilon = TwoM.calculate_eps()
-            ec_factor = TwoM.calculate_ec_factor()
-            sampling_weight = TwoM.calculate_sampling_weight()
-            ec_size, ec_buffer_size, rl_buffer_size = TwoM.get_memory_size()
-            wandb_session.log({'eval return': eval_return, 'rl score': rl_score, 'ec score': ec_score, 'eps': epsilon, 'ec size': ec_size, 'ec buffer size': ec_buffer_size, 'rl buffer size': rl_buffer_size, 'ec factor': ec_factor, 'sampling weight': sampling_weight, 'training steps': i_steps})
-            print({'eval return': eval_return, 'rl score': rl_score, 'ec score': ec_score, 'eps': epsilon, 'ec size': ec_size, 'ec buffer size': ec_buffer_size, 'rl buffer size': rl_buffer_size, 'ec factor': ec_factor, 'sampling weight': sampling_weight, 'training steps': i_steps})
+            eval_return = evaluate(emdqn, eval_env)
+            ec_size = emdqn.em.get_size()
+            rl_buffer_size = rb.cntr
+            wandb_session.log({'eval return': eval_return, 'eps': eps, 'ec size': ec_size, 'rl buffer size': rl_buffer_size, 'training steps': i_steps})
+            print({'eval return': eval_return, 'eps': eps, 'ec size': ec_size, 'rl buffer size': rl_buffer_size, 'training steps': i_steps})
             '''
             plt.clf()
             ax = sns.heatmap(train_on_states, vmin=0, vmax=20000)
@@ -105,12 +102,13 @@ def train(TwoM, env, eval_env, config, wandb_session):
 
 if __name__ == '__main__':
     torch.set_num_threads(10)
-    description = '2MToyExample'
+    description = 'EMDQN'
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('--project', type=str, default='2MAtariSto1SEEDwithSticky')
     #parser.add_argument('--env_name', type=str, default='MiniGrid-TwoRooms-v0')
     #parser.add_argument('--env_name', type=str, default='LunarLander-v2')
     parser.add_argument('--env_name', type=str, default='MinAtar/SpaceInvaders-v1')
+    parser.add_argument('--rl_alg', type=str, default='emdqn')
     #parser.add_argument('--env_name', type=str, default='MinAtar/Breakout-v1')
     #parser.add_argument('--env_name', type=str, default='MinAtar/Asterix-v1')
     parser.add_argument('--wandb', default=False, action='store_true')
@@ -128,18 +126,8 @@ if __name__ == '__main__':
     parser.add_argument('--eps_end', type=float, default=0.001)
     parser.add_argument('--eps_decay_steps', type=int, default=200000)
 
-    # do not start from 1 or 0, 1 means pure ec, 0 means pure rl.
-    parser.add_argument('--ec_factor_start', type=float, default=0.9)
-    parser.add_argument('--ec_factor_end', type=float, default=0.01)
-    parser.add_argument('--ec_factor_decay_steps', type=int, default=500000)
-
-    parser.add_argument('--sampling_weight_start', type=float, default=0.9)
-    parser.add_argument('--sampling_weight_end', type=float, default=0.01)
-    parser.add_argument('--sampling_weight_decay_steps', type=int, default=500000)
-
     parser.add_argument('--total_memory_size', type=int, default=100000)
     parser.add_argument('--rb_capacity', type=int, default=250000) # this will be calculated according to the total memory size
-    parser.add_argument('--rl_alg', type=str, default='DQN')
     parser.add_argument('--mfec_buffer_size', type=int, default=125000) # this will be calculated according to the total memory size
     parser.add_argument('--mfec_k', type=int, default=3)
     parser.add_argument('--mfec_rp_dim', type=int, default=8)
@@ -148,7 +136,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--sticky_action_prob', type=float, default=0)
 
-    parser.add_argument('--mm', default=False, action='store_true')
+    parser.add_argument('--emdqn_lambda', type=float, default=0.01)
 
     args = parser.parse_args()
 
@@ -177,22 +165,10 @@ if __name__ == '__main__':
         raise ValueError('Plz specify action space and input space for the env {}'.format(str(config.env_name)))
 
     # calculate size of different buffers
-    if args.ec_factor_start == 1:
-        # pure ec
-        args.mfec_buffer_size = args.total_memory_size / n_actions
-        args.rb_capacity = 1
-        n_rb = 0
-    elif args.ec_factor_start == 0:
-        # pure rl
-        args.mfec_buffer_size = 1
-        args.rb_capacity = args.total_memory_size
-        n_rb = 1
-    else:
-        args.mfec_buffer_size = args.total_memory_size / (2*n_actions)
-        args.rb_capacity = args.total_memory_size / (2*2)
-        n_rb = 2
+    args.mfec_buffer_size = args.total_memory_size / (2*n_actions)
+    args.rb_capacity = args.total_memory_size / 2
 
-    print('total memory size: {} | mfec size: {} * {} | rb capacity: {} * {}'.format(args.total_memory_size, args.mfec_buffer_size, n_actions, args.rb_capacity, n_rb))
+    print('total memory size: {} | mfec size: {} * {} | rb capacity: {}'.format(args.total_memory_size, args.mfec_buffer_size, n_actions, args.rb_capacity))
 
     for run in range(args.runs):
         if args.wandb:
@@ -221,24 +197,7 @@ if __name__ == '__main__':
 
         #n_actions = env.action_space.n
 
-        if config.rl_alg == 'DQN':
-            from DQN import DQNAgent
-            rl = DQNAgent(gamma=config.gamma, target_update_freq=config.target_update_freq, input_dim=input_dim, n_actions=n_actions, hidden_dim=config.hidden_dim, lr=config.lr)
-        elif config.rl_alg == 'DDQN':
-            from DDQN import DDQNAgent
-            rl = DDQNAgent(gamma=config.gamma, target_update_freq=config.target_update_freq, input_dim=input_dim, n_actions=n_actions, hidden_dim=config.hidden_dim, lr=config.lr)
-        else: 
-            raise NotImplementedError
-
-        if config.mm:
-            from MinMaxMFEC_atari import MFECAgent
-        else:
-            from MFEC_atari import MFECAgent
-
-        ec = MFECAgent(buffer_size=config.mfec_buffer_size, k=config.mfec_k, n_actions=n_actions, config=config, discount=config.gamma, random_projection_dim=config.mfec_rp_dim, state_dim=input_dim)
-        #ec = MFECAgent(buffer_size=config.mfec_buffer_size, discount=config.gamma, n_actions=n_actions, state_dim=input_dim, config=config)
-        TwoMrb = TwoMBuffer(capacity=config.rb_capacity, batch_size=config.batch_size)
-
-        TwoMagent = TwoMemoryAgent(ec, rl, TwoMrb, n_actions, config)
-
-        train(TwoMagent, env, eval_env, config, wandb_session)
+        rb = ReplayBuffer(config.rb_capacity)
+        em = MFECAgent(buffer_size=config.mfec_buffer_size, k=config.mfec_k, n_actions=n_actions, config=config, discount=config.gamma, random_projection_dim=config.mfec_rp_dim, state_dim=input_dim)
+        emdqn = EMDQNAgent(em, gamma=config.gamma, target_update_freq=config.target_update_freq, input_dim=input_dim, n_actions=n_actions, hidden_dim=config.hidden_dim, lr=config.lr, em_lambda=config.emdqn_lambda)
+        train(emdqn, rb, env, eval_env, config, wandb_session)

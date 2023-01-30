@@ -2,9 +2,6 @@ import numpy as np
 from utils import cal_eps
 from collections import deque
 
-#from MFEC import MFECAgent
-from MFEC_atari import MFECAgent
-
 class TwoMemoryAgent():
     def __init__(self, ec, rl, rb, n_actions, config):
         self.ec = ec
@@ -25,6 +22,13 @@ class TwoMemoryAgent():
         self.sw_d = config.sampling_weight_decay_steps
         self.steps_cntr = 0
         self.config = config
+        if 'MinAtar' in self.config.env_name and self.config.mm == False:
+            from MFEC_atari import MFECAgent
+        elif 'MinAtar' in self.config.env_name and self.config.mm == True:
+            from MinMaxMFEC_atari import MFECAgent
+        else:
+            from MFEC import MFECAgent
+        self.MFECAgent = MFECAgent
 
     def choose_agent(self):
         ec_factor = self.calculate_ec_factor()
@@ -49,7 +53,7 @@ class TwoMemoryAgent():
             return self.rl, 'rl'
     
     def get_current_agent_str(self):
-        if isinstance(self.current_agent, MFECAgent):
+        if isinstance(self.current_agent, self.MFECAgent):
             return 'ec'
         else:
             return 'rl'
@@ -83,13 +87,13 @@ class TwoMemoryAgent():
         return ec_factor
 
     def collect_data(self, single_trajecotry):
-        if isinstance(self.current_agent, MFECAgent):
+        if isinstance(self.current_agent, self.MFECAgent):
             self.rb.ec_buffer.add(single_trajecotry)
         else:
             self.rb.rl_buffer.add(single_trajecotry)
 
     def update_score(self, score):
-        if isinstance(self.current_agent, MFECAgent):
+        if isinstance(self.current_agent, self.MFECAgent):
             self.ec_scores.append(score)
         else:
             self.rl_scores.append(score)

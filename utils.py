@@ -66,3 +66,10 @@ class RandomProjector():
     def project(self, state):
         projected_state = np.dot(state, self.rp_matrix)
         return projected_state
+
+def dot(a,b):
+    length = b.shape[1]
+    c = np.zeros(length)
+    for i in np.arange(length):
+        c[i] = np.inner(a,b[:,i])
+    return c

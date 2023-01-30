@@ -7,21 +7,29 @@ class ReplayBuffer():
         self.capacity = capacity
         self.batch_size = batch_size
         self.cntr = 0
+        self.rb_where = []
 
     def sample(self):
+        #
+        Transition = namedtuple('Transition', ('state', 'action', 'reward', 'n_state', 'done'))
         idxes = np.random.choice(len(self.rb), self.batch_size)
         batch = []
         for experience in np.array(self.rb, dtype=object)[idxes]:
-            batch.append((experience['state'], experience['action'], experience['reward'], experience['n_state'], experience['done']))
+            #
+            batch.append(Transition(experience['state'], experience['action'], experience['reward'], experience['n_state'], experience['done']))
+        #
+        batch = Transition(*zip(*batch))
         return batch
 
-    def add(self, single_trajectory):
+    def add(self, single_trajectory, flag):
         for experience in single_trajectory:
             self.rb.append(experience)
+            self.rb_where.append(flag)
             self.cntr += 1
             if self.cntr >= self.capacity:
                 self.cntr -= 1
                 self.rb.pop(0)
+                self.rb_where.pop(0)
 
 class TwoMBuffer():
     def __init__(self, capacity, batch_size, sampling_weight=0.1):

@@ -129,4 +129,5 @@ dmypy.json
 .pyre/
 
 #results
-.wandb/
+wandb/
+tabular/wandb/

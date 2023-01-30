@@ -12,25 +12,28 @@ class TwoMemoryAgent():
         self.n_actions = n_actions
         self.ec_scores = deque(maxlen=10)
         self.rl_scores = deque(maxlen=10)
-        self.ec_factor = config.ec_factor
         self.current_agent = self.ec
         self.eps_s = config.eps_start
         self.eps_e = config.eps_end
         self.eps_d = config.eps_decay_steps
+        self.ec_s = config.ec_start
+        self.ec_e = config.ec_end
+        self.ec_d = config.ec_decay_steps
         self.steps_cntr = 0
         self.config = config
 
     def choose_agent(self):
-        if np.random.uniform() < self.ec_factor:
+        ec_factor = self.calculate_ec_factor()
+        if np.random.uniform() < ec_factor:
             self.current_agent = self.ec
         else:
             self.current_agent = self.rl
     
     def choose_agent_eval(self):
         # for using pure rl and pure ec, we directly return corresponding agent
-        if self.ec_factor == 0:
+        if self.ec_s == 0:
             return self.rl, 'rl'
-        elif self.ec_factor == 1:
+        elif self.ec_s == 1:
             return self.ec, 'ec'
         if np.mean(self.ec_scores) > np.mean(self.rl_scores):
             return self.ec, 'ec'
@@ -59,11 +62,22 @@ class TwoMemoryAgent():
         eps = cal_eps(self.eps_s, self.eps_e, self.eps_d, self.steps_cntr)
         return eps
         
-    def collect_data(self, single_trajecotry):
+    def calculate_ec_factor(self):
+        ec = cal_eps(self.ec_s, self.ec_e, self.ec_d, self.steps_cntr)
+        return ec
+
+    def collect_data(self, single_trajectory):
+        '''
         if isinstance(self.current_agent, ECAgent):
-            self.rb.ec_buffer.add(single_trajecotry)
+            self.rb.ec_buffer.add(single_trajectory)
         else:
-            self.rb.rl_buffer.add(single_trajecotry)
+            self.rb.rl_buffer.add(single_trajectory)
+        '''
+        if isinstance(self.current_agent, ECAgent):
+            flag = 1 # ec
+        else:
+            flag = 0 # rl
+        self.rb.add(single_trajectory, flag)
 
     def update_score(self, score):
         if isinstance(self.current_agent, ECAgent):
@@ -79,15 +93,21 @@ class TwoMemoryAgent():
         self.rl.update(batch_data)
         return batch_data
 
-    def update_ec(self, single_trajecotry):
-        self.ec.update(single_trajecotry)
+    def update_ec(self, single_trajectory):
+        self.ec.update(single_trajectory)
 
     def rb_ready(self):
+        '''
         if self.ec_factor == 0 and self.rb.rl_buffer.cntr != 0 and self.config.sampling_weight == 0: # if full RL, and rl buffer is not empty, and data has to be sampled all from rl buffer
             return True
         elif self.ec_factor == 0 and self.rb.rl_buffer.cntr != 0 and self.config.sampling_weight != 0: # if full RL, and rl buffer is not empty, and data has to be sampled all from rl buffer
             raise ValueError('You are tring use pure RL but still wanna sample data from ec buffer...')
         if self.rb.ec_buffer.cntr != 0 and self.rb.rl_buffer.cntr != 0:
+            return True
+        else:
+            return False
+        '''
+        if self.rb.cntr != 0:
             return True
         else:
             return False
