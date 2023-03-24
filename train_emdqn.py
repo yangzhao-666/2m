@@ -9,18 +9,15 @@ import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from Env import FourRoomsEnv, ObsEnv, ImgEnv, GoalEnv, FlattenObs
 from MFEC_atari import MFECAgent
 from EMDQN import EMDQNAgent
 from RB import ReplayBuffer
 
 from utils import cal_eps
-from minigrid.wrappers import ReseedWrapper, FullyObsWrapper, RGBImgObsWrapper, ImgObsWrapper
 
 import psutil
 
 def evaluate(emdqn, eval_env):
-    #canvas_agents = np.zeros((20, 20)) # -1 for EC, 1 for RL, 0 means the same(good/bad)
     returns = []
     for i in range(10):
         eps_returns = 0
@@ -33,17 +30,13 @@ def evaluate(emdqn, eval_env):
             n_s, r, done, info = eval_env.step(action)
             s = n_s
             eps_returns += r
-            #trajs[s] += 1
         returns.append(eps_returns)
 
     return np.mean(returns)
             
 def train(emdqn, rb, env, eval_env, config, wandb_session):
-    #wandb_session.watch(rl.Q_net, log='all')
     i_steps = 0
     i_episode = 0
-    #train_on_states = np.zeros((20, 20))
-    #collected_data = {'ec': np.zeros((20, 20)), 'rl': np.zeros((20, 20))}
     while i_steps < config.total_steps:
         single_trajectory = []
         s = env.reset()
@@ -67,9 +60,7 @@ def train(emdqn, rb, env, eval_env, config, wandb_session):
                         'action': action,
                         'timestp': i_steps
                 }
-            #collected_data[agent_str][s] += 1
             eps_returns += r
-            #print(experience)
             single_trajectory.append(experience)
             s = n_s
             if rb.cntr > config.batch_size:
@@ -85,32 +76,14 @@ def train(emdqn, rb, env, eval_env, config, wandb_session):
             rl_buffer_size = rb.cntr
             wandb_session.log({'eval return': eval_return, 'eps': eps, 'ec size': ec_size, 'rl buffer size': rl_buffer_size, 'training steps': i_steps})
             print({'eval return': eval_return, 'eps': eps, 'ec size': ec_size, 'rl buffer size': rl_buffer_size, 'training steps': i_steps})
-            '''
-            plt.clf()
-            ax = sns.heatmap(train_on_states, vmin=0, vmax=20000)
-            wandb_session.log({'RL is trained on states': wandb.Image(ax)})
-            plt.clf()
-            ax = sns.heatmap(collected_data['rl'], vmin=0, vmax=20000)
-            wandb_session.log({'RL Collected data distribution': wandb.Image(ax)})
-            plt.clf()
-            ax = sns.heatmap(collected_data['ec'], vmin=0, vmax=20000)
-            wandb_session.log({'EC Collected data distribution': wandb.Image(ax)})
-            plt.clf()
-            ax = sns.heatmap(eval_traj, vmin=0, vmax=5)
-            wandb_session.log({'2M eval trajectory': wandb.Image(ax)})
-            '''
 
 if __name__ == '__main__':
     torch.set_num_threads(10)
     description = 'EMDQN'
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('--project', type=str, default='2MAtariSto1SEEDwithSticky')
-    #parser.add_argument('--env_name', type=str, default='MiniGrid-TwoRooms-v0')
-    #parser.add_argument('--env_name', type=str, default='LunarLander-v2')
     parser.add_argument('--env_name', type=str, default='MinAtar/SpaceInvaders-v1')
     parser.add_argument('--rl_alg', type=str, default='emdqn')
-    #parser.add_argument('--env_name', type=str, default='MinAtar/Breakout-v1')
-    #parser.add_argument('--env_name', type=str, default='MinAtar/Asterix-v1')
     parser.add_argument('--wandb', default=False, action='store_true')
     parser.add_argument('--runs', type=int, default=5)
     parser.add_argument('--total_steps', type=int, default=3000000)
@@ -178,24 +151,8 @@ if __name__ == '__main__':
 
         config = wandb.config
 
-        '''
-        env = gym.make(config.env_name)
-        env = ReseedWrapper(FullyObsWrapper(env))
-        env = FourRoomsEnv(env, max_steps=config.env_max_steps)
-
-        eval_env = gym.make(config.env_name)
-        eval_env = ReseedWrapper(FullyObsWrapper(eval_env))
-        eval_env = FourRoomsEnv(eval_env, max_steps=config.env_max_steps)
-        env = FullyObsWrapper(gym.make(config.env_name, size=config.grid_size))
-        env = GoalEnv(env, max_steps=config.env_max_steps)
-
-        eval_env = FullyObsWrapper(gym.make(config.env_name, size=config.grid_size))
-        eval_env = GoalEnv(eval_env, max_steps=config.env_max_steps)
-        '''
         env = gym.make(config.env_name, sticky_action_prob=config.sticky_action_prob)
         eval_env = gym.make(config.env_name, sticky_action_prob=config.sticky_action_prob)
-
-        #n_actions = env.action_space.n
 
         rb = ReplayBuffer(config.rb_capacity, batch_size=args.batch_size)
         em = MFECAgent(buffer_size=config.mfec_buffer_size, k=config.mfec_k, n_actions=n_actions, config=config, discount=config.gamma, random_projection_dim=config.mfec_rp_dim, state_dim=input_dim)

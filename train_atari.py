@@ -9,6 +9,7 @@ import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+from MFEC_atari import MFECAgent
 from RB import ReplayBuffer
 from TwoM import TwoMemoryAgent
 
@@ -126,8 +127,6 @@ if __name__ == '__main__':
 
     parser.add_argument('--sticky_action_prob', type=float, default=0)
 
-    parser.add_argument('--mm', default=False, action='store_true')
-    parser.add_argument('--solobuffer', default=True, action='store_true')
     parser.add_argument('--data_sharing', default=False, action='store_true')
 
     args = parser.parse_args()
@@ -188,16 +187,8 @@ if __name__ == '__main__':
         if config.rl_alg == 'DQN':
             from DQN import DQNAgent
             rl = DQNAgent(gamma=config.gamma, target_update_freq=config.target_update_freq, input_dim=input_dim, n_actions=n_actions, hidden_dim=config.hidden_dim, lr=config.lr)
-        elif config.rl_alg == 'DDQN':
-            from DDQN import DDQNAgent
-            rl = DDQNAgent(gamma=config.gamma, target_update_freq=config.target_update_freq, input_dim=input_dim, n_actions=n_actions, hidden_dim=config.hidden_dim, lr=config.lr)
         else: 
             raise NotImplementedError
-
-        if config.mm:
-            from MinMaxMFEC_atari import MFECAgent
-        else:
-            from MFEC_atari import MFECAgent
 
         ec = MFECAgent(buffer_size=config.mfec_buffer_size, k=config.mfec_k, n_actions=n_actions, config=config, discount=config.gamma, random_projection_dim=config.mfec_rp_dim, state_dim=input_dim)
         rb = ReplayBuffer(capacity=config.rb_capacity, batch_size=config.batch_size)
