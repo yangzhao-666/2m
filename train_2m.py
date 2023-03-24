@@ -86,12 +86,8 @@ if __name__ == '__main__':
     torch.set_num_threads(10)
     description = '2MToyExample'
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('--project', type=str, default='2MMinAtarAllResults')
-    #parser.add_argument('--env_name', type=str, default='MiniGrid-TwoRooms-v0')
-    #parser.add_argument('--env_name', type=str, default='LunarLander-v2')
+    parser.add_argument('--project', type=str, default='2MMinAtarExperiments')
     parser.add_argument('--env_name', type=str, default='MinAtar/SpaceInvaders-v1')
-    #parser.add_argument('--env_name', type=str, default='MinAtar/Breakout-v1')
-    #parser.add_argument('--env_name', type=str, default='MinAtar/Asterix-v1')
     parser.add_argument('--wandb', default=False, action='store_true')
     parser.add_argument('--runs', type=int, default=5)
     parser.add_argument('--total_steps', type=int, default=3000000)

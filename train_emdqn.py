@@ -116,24 +116,24 @@ if __name__ == '__main__':
     if 'SpaceInvaders' in args.env_name:
         n_actions = 4
         input_dim = [10, 10, 6]
-        #args.sticky_action_prob = 0.02
+        args.sticky_action_prob = 0.02
     elif 'Freeway' in args.env_name:
         n_actions = 3
         input_dim = [10, 10, 7]
         args.eval_freq = 10
-        #args.sticky_action_prob = 0
+        args.sticky_action_prob = 0.01
     elif 'Asterix' in args.env_name:
         n_actions = 5
         input_dim = [10, 10, 4]
-        #args.sticky_action_prob = 0.1
+        args.sticky_action_prob = 0.1
     elif 'Breakout' in args.env_name:
         n_actions = 3
         input_dim = [10, 10, 4]
-        #args.sticky_action_prob = 0.2
+        args.sticky_action_prob = 0.2
     elif 'Seaquest' in args.env_name:
         n_actions = 6
         input_dim = [10, 10, 10]
-        #args.sticky_action_prob = 0.05
+        args.sticky_action_prob = 0.05
     else:
         raise ValueError('Plz specify action space and input space for the env {}'.format(str(config.env_name)))
 
