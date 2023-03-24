@@ -29,6 +29,7 @@ class TwoMemoryAgent():
         else:
             from MFEC import MFECAgent
         self.MFECAgent = MFECAgent
+        self.data_sharing = config.data_sharing
 
     def choose_agent(self):
         ec_factor = self.calculate_ec_factor()
@@ -39,7 +40,8 @@ class TwoMemoryAgent():
     
     def get_memory_size(self):
         # return size of (ec, ec_buffer, rl_buffer)
-        return [self.ec.get_size(), *self.rb.get_size()]
+        #return [self.ec.get_size(), *self.rb.get_size()]
+        return [self.ec.get_size(), self.rb.cntr]
 
     def choose_agent_eval(self):
         # for using pure rl and pure ec, we directly return corresponding agent
@@ -83,14 +85,25 @@ class TwoMemoryAgent():
     def calculate_ec_factor(self):
         if self.ec_s == 1 or self.ec_s == 0:
             return self.ec_s
+        elif self.ec_s == -1: # meaning ec factor will be adaptively decided
+            if np.sum(self.ec_scores) == 0 or np.sum(self.rl_scores) == 0: # if ec or rl has no progress, we should assign them 50%
+                return 0.5
+            s = np.sum(self.ec_scores) / np.sum(self.rl_scores)
+            #ec_factor = s - 0.5
+            ec_factor = 0.25 * s + 0.25
+            ec_factor = np.clip(ec_factor, 0.05, 0.95)
+            return ec_factor
         ec_factor = cal_eps(self.ec_s, self.ec_e, self.ec_d, self.steps_cntr)
         return ec_factor
 
-    def collect_data(self, single_trajecotry):
+    def collect_data(self, single_trajectory):
         if isinstance(self.current_agent, self.MFECAgent):
-            self.rb.ec_buffer.add(single_trajecotry)
+            #self.rb.ec_buffer.add(single_trajectory)
+            if self.data_sharing:
+                self.rb.add(single_trajectory, mark=1)
         else:
-            self.rb.rl_buffer.add(single_trajecotry)
+            #self.rb.rl_buffer.add(single_trajectory)
+            self.rb.add(single_trajectory, mark=0)
 
     def update_score(self, score):
         if isinstance(self.current_agent, self.MFECAgent):
@@ -102,15 +115,20 @@ class TwoMemoryAgent():
         return np.mean(self.rl_scores), np.mean(self.ec_scores)
 
     def update_rl(self):
-        sampling_weight = self.calculate_sampling_weight()
-        batch_data = self.rb.sample(sampling_weight)
+        #sampling_weight = self.calculate_sampling_weight()
+        batch_data = self.rb.sample()
         self.rl.update(batch_data)
         return batch_data
 
-    def update_ec(self, single_trajecotry):
-        self.ec.update(single_trajecotry)
+    def update_ec(self, single_trajectory):
+        if self.data_sharing:
+            self.ec.update(single_trajectory)
+        else:
+            if isinstance(self.current_agent, self.MFECAgent):
+                self.ec.update(single_trajectory)
 
     def rb_ready(self):
+        '''
         if self.ec_s == 0 and self.rb.rl_buffer.cntr != 0 and self.sw_s == 0: # if full RL, and rl buffer is not empty, and data has to be sampled all from rl buffer
             return True
         elif self.ec_s == 0 and self.rb.rl_buffer.cntr != 0 and self.sw_s != 0: # if full RL, and rl buffer is not empty, and data has to be sampled all from rl buffer
@@ -119,3 +137,9 @@ class TwoMemoryAgent():
             return True
         else:
             return False
+        '''
+        if self.rb.cntr > 0:
+            return True
+
+    def get_data_p(self):
+        return self.rb.get_data_p()

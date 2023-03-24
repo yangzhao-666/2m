@@ -21,8 +21,6 @@ def post_explore(env, last_state, steps):
 
 def cal_eps(start, end, decay, i_steps):
     eps = end + (start - end) * np.exp(-1 * i_steps / decay)
-    if start < end:
-        return end - eps + start
     return eps
 
 class ActionRescaler():

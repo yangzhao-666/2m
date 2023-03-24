@@ -32,16 +32,11 @@ class EMDQNAgent():
 
     def update(self, batch_data):
         self.update_cntr += 1
-        Transition = namedtuple('Transition', ('state', 'action', 'reward', 'n_state', 'done'))
-        batch = []
-        for experience in batch_data:
-            batch.append(Transition(experience[0], experience[1], experience[2], experience[3], experience[4]))
-        batch = Transition(*zip(*batch))
-        batch_s = torch.FloatTensor(batch.state)
-        batch_n_s = torch.FloatTensor(batch.n_state)
-        batch_a = batch.action
-        batch_r = torch.FloatTensor(batch.reward)
-        batch_done = torch.FloatTensor(batch.done)
+        batch_s = torch.FloatTensor(batch_data.state)
+        batch_n_s = torch.FloatTensor(batch_data.n_state)
+        batch_a = batch_data.action
+        batch_r = torch.FloatTensor(batch_data.reward)
+        batch_done = torch.FloatTensor(batch_data.done)
         # bootstrap for state that reaches maximum time step.
         try:
             batch_done[torch.logical_and(batch_r==-0.01, batch_done==1)] = torch.zeros(size=batch_done[torch.logical_and(batch_r==-0.01, batch_done==1)].shape)

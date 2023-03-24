@@ -74,10 +74,10 @@ def train(emdqn, rb, env, eval_env, config, wandb_session):
             s = n_s
             if rb.cntr > config.batch_size:
                 if i_steps % config.RL_train_freq == 0:
-                    batch_data = rb.sample(config.batch_size)
+                    batch_data = rb.sample()
                     emdqn.update(batch_data)
         emdqn.em.update(single_trajectory)
-        rb.add(single_trajectory)
+        rb.add(single_trajectory, mark=0)
         i_episode += 1
         if i_episode % config.eval_freq == 0:
             eval_return = evaluate(emdqn, eval_env)
@@ -197,7 +197,7 @@ if __name__ == '__main__':
 
         #n_actions = env.action_space.n
 
-        rb = ReplayBuffer(config.rb_capacity)
+        rb = ReplayBuffer(config.rb_capacity, batch_size=args.batch_size)
         em = MFECAgent(buffer_size=config.mfec_buffer_size, k=config.mfec_k, n_actions=n_actions, config=config, discount=config.gamma, random_projection_dim=config.mfec_rp_dim, state_dim=input_dim)
         emdqn = EMDQNAgent(em, gamma=config.gamma, target_update_freq=config.target_update_freq, input_dim=input_dim, n_actions=n_actions, hidden_dim=config.hidden_dim, lr=config.lr, em_lambda=config.emdqn_lambda)
         train(emdqn, rb, env, eval_env, config, wandb_session)
