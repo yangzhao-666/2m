@@ -11,7 +11,6 @@ IEEE Conference on Games 2023
 
 To learn more:
 - [paper](https://arxiv.org/abs/2304.10098)
-- [paper](https://arxiv.org/abs/2304.10098)
 
 If you find our paper or code useful, please reference us:
 
@@ -32,6 +31,8 @@ conda env create -f environment.yml
 
 ### Running Experiments
 --- 
+The code base uses [wandb](https://wandb.ai) for logging all the results, for using it, you need to register as a user. Of course, you can change it to other logging tools, but then you need to modify all the logging statements.
+
 You can simply run the code ```python train_2m.py```, or you can change hyper-parameters in ```train_2m.py``` then run it.
 
 Please be noted hyper-parameters in this work is quite senstive, in order to fully reproduce the results presented in the paper, you need to set values for all hyper-parameters as follows:
