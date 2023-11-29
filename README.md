@@ -47,6 +47,7 @@ The structure of the code base.
   |- MFEC_atari.py          # implementation of model-free episodic control agent for MinAtar tasks
   |- tabular/               # folder of tabular implementations
   |- RB.py                  # implementation of replay buffers
+  |- utils.py               # utils functions
 ```
 ### Acknowledgements
 --- 
