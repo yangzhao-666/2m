@@ -24,8 +24,6 @@ class TwoMemoryAgent():
         self.config = config
         if 'MinAtar' in self.config.env_name and self.config.mm == False:
             from MFEC_atari import MFECAgent
-        elif 'MinAtar' in self.config.env_name and self.config.mm == True:
-            from MinMaxMFEC_atari import MFECAgent
         else:
             from MFEC import MFECAgent
         self.MFECAgent = MFECAgent

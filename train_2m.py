@@ -32,7 +32,6 @@ def evaluate(TwoM, eval_env):
     return np.mean(returns)
             
 def train(TwoM, env, eval_env, config, wandb_session):
-    #wandb_session.watch(rl.Q_net, log='all')
     i_steps = 0
     i_episode = 0
     steps_taken_exploration = 0
@@ -134,7 +133,6 @@ if __name__ == '__main__':
     elif 'Freeway' in args.env_name:
         n_actions = 3
         input_dim = [10, 10, 7]
-        #args.eval_freq = 10
         args.sticky_action_prob = 0.01
     elif 'Asterix' in args.env_name:
         n_actions = 5
