@@ -34,7 +34,7 @@ The code base uses [wandb](https://wandb.ai) for logging all the results, for us
 
 You can simply run the code ```python train_2m.py --wandb```, tabular experiments presented in the paper ```python tabular/train_tab.py --wandb```.
 
-Please be noted hyper-parameters in this work are quite senstive, in order to fully reproduce the results presented in the paper, you need to set values for all hyper-parameters as follows:
+Please be noted hyper-parameters in this work are quite senstive, in order to fully reproduce the results presented in the paper, you need to set hyper-parameters the same as in [file]()
 
 
 ### Code Overview
