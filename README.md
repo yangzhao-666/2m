@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-# 2M
-Two Memory Reinforcement Learning Agents
-=======
 # Two-Memory Reinforcement Learning
 IEEE Conference on Games 2023
 
@@ -38,7 +34,7 @@ The code base uses [wandb](https://wandb.ai) for logging all the results, for us
 
 You can simply run the code ```python train_2m.py --wandb```, tabular experiments presented in the paper ```python tabular/train_tab.py --wandb```.
 
-Please be noted hyper-parameters in this work are quite senstive, in order to fully reproduce the results presented in the paper, you need to set hyper-parameters the same as in [file]()
+Please be noted hyper-parameters in this work are quite senstive, in order to fully reproduce the results presented in the paper, you need to set hyper-parameters the same as in [file](https://github.com/yangzhao-666/2m/blob/main/hyper_setting.json).
 
 
 ### Code Overview
@@ -59,4 +55,3 @@ The structure of the code base.
 - [MinAtar](https://github.com/kenjyoung/MinAtar/tree/master) for simplified Atari tasks
 - [MFEC](https://github.com/astier/model-free-episodic-control/tree/master) for the implementation of model-free episodic control agent
 - [PEG](https://github.com/penn-pal-lab/peg/tree/master) for their nice READMEs
->>>>>>> 12c5c76fc4879a0e06edc9aebab3740bb869bbf5
