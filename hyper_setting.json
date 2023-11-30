@@ -1,0 +1,56 @@
+{
+'MinAtar/Breakout':
+    {
+        'sticky_action_prob': 0.2,
+        'ec_factor_start': 0.5,
+        'ec_factor_end': 0.1,
+        'ec_factor_decay_steps': 500000,
+        'data_sharing': True,
+    },
+
+'MinAtar/Asterix':
+    {
+        'env seed': 1,
+        'sticky_action_prob': 0.1,
+        'ec_factor_start': 0.5,
+        'ec_factor_end': 0.1,
+        'ec_factor_decay_steps': 500000,
+        'data_sharing': True,
+    },
+
+'MinAtar/Seaquest':
+    {
+        'env seed': 1,
+        'sticky_action_prob': 0.05,
+        'ec_factor_start': 0.5,
+        'ec_factor_end': 0.1,
+        'ec_factor_decay_steps': 500000,
+        'data_sharing': False,
+    },
+
+'MinAtar/SpaceInvaders':
+    {
+        'sticky_action_prob': 0.02,
+        'ec_factor_start': 0.9,
+        'ec_factor_end': 0.1,
+        'ec_factor_decay_steps': 500000,
+        'data_sharing': True,
+    },
+
+'MinAtar/Freeway':
+    {
+        'env seed': 1,
+        'sticky_action_prob': 0.01,
+        'ec_factor_start': 0.9,
+        'ec_factor_end': 0.1,
+        'ec_factor_decay_steps': 500000,
+        'data_sharing': True,
+    },
+
+'tabular':
+    {
+        'ec_factor_start': 0.1,
+        'ec_factor_end': 0.01,
+        'ec_factor_decay_steps': 20000,
+    },
+}

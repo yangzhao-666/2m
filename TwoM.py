@@ -22,10 +22,7 @@ class TwoMemoryAgent():
         self.sw_d = config.sampling_weight_decay_steps
         self.steps_cntr = 0
         self.config = config
-        if 'MinAtar' in self.config.env_name and self.config.mm == False:
-            from MFEC_atari import MFECAgent
-        else:
-            from MFEC import MFECAgent
+        from MFEC_atari import MFECAgent
         self.MFECAgent = MFECAgent
         self.data_sharing = config.data_sharing
 

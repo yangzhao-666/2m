@@ -107,8 +107,7 @@ if __name__ == '__main__':
     torch.set_num_threads(5)
     description = '2MToyExample'
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('--project', type=str, default='2Mtabular')
-    #parser.add_argument('--env_name', type=str, default='MiniGrid-TwoRooms-v0')
+    parser.add_argument('--project', type=str, default='test_tabular')
     parser.add_argument('--env_name', type=str, default='StochWindyGridWorld-v0')
     parser.add_argument('--wandb', default=False, action='store_true')
     parser.add_argument('--runs', type=int, default=5)
