@@ -1,0 +1,33 @@
+name: torch
+channels:
+  - pytorch
+  - anaconda
+  - conda-forge
+  - defaults
+dependencies:
+  - cudatoolkit=11.0.221=h6bb024c_0
+  - parso=0.7.0=py_0
+  - pip=20.3.3=py38h06a4308_0
+  - python=3.8.5=h7579374_1
+  - pytorch=1.7.1=py3.8_cuda11.0.221_cudnn8.0.5_0
+  - readline=8.0=h7b6447c_0
+  - scikit-learn=0.23.2=py38h0573a6f_0
+  - scipy=1.5.2=py38h0b6359f_0
+  - setuptools=51.0.0=py38h06a4308_2
+  - pip:
+    - anytree==2.8.0
+    - atari-py==0.2.9
+    - gym==0.21.0
+    - gymnasium==0.26.3
+    - matplotlib==3.6.2
+    - minatar==1.0.11
+    - minigrid==2.1.0
+    - numpy==1.23.5
+    - nvidia-ml-py3==7.352.0
+    - pandas==1.5.2
+    - pathtools==0.1.2
+    - psutil==5.8.0
+    - seaborn==0.13.0
+    - torch==1.9.1
+    - tqdm==4.55.0
+    - wandb==0.13.10
