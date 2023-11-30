@@ -6,9 +6,6 @@ IEEE Conference on Games 2023
 <img src="https://github.com/yangzhao-666/TwoM/blob/main/2M.png" width="600" height="300">
 
 ---
-
-# Codebase still WIP!
-
 To learn more:
 - [paper](https://arxiv.org/abs/2304.10098)
 
@@ -29,15 +26,16 @@ Create the conda environment by running:
 conda env create -f environment.yml
 ```
 
+In order to run experiments on [MinAtar](https://github.com/kenjyoung/MinAtar) tasks, you need to install MinAtar correctly by following instructions provided.
+
 ### Running Experiments
 --- 
-The code base uses [wandb](https://wandb.ai) for logging all the results, for using it, you need to register as a user. Of course, you can change it to other logging tools, but then you need to modify all the logging statements.
+The code base uses [wandb](https://wandb.ai) for logging all the results, for using it, you need to register as a user. Then you can pass ```--wandb``` to enable wandb logging.
 
-You can simply run the code ```python train_2m.py```, or you can change hyper-parameters in ```train_2m.py``` then run it.
+You can simply run the code ```python train_2m.py --wandb```, tabular experiments presented in the paper ```python tabular/train_tab.py --wandb```.
 
-You can also run tabular experiments presented in the paper by ```python tabular/train_tab.py```
+Please be noted hyper-parameters in this work are quite senstive, in order to fully reproduce the results presented in the paper, you need to set values for all hyper-parameters as follows:
 
-Please be noted hyper-parameters in this work is quite senstive, in order to fully reproduce the results presented in the paper, you need to set values for all hyper-parameters as follows:
 
 ### Code Overview
 ---
